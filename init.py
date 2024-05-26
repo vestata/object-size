@@ -10,15 +10,22 @@ from imutils import contours
 import numpy as np
 import imutils
 import cv2
+import math
 
 # Function to show array of images (intermediate results)
 def show_images(images):
-	for i, img in enumerate(images):
-		cv2.imshow("image_" + str(i), img)
-	cv2.waitKey(0)
-	cv2.destroyAllWindows()
+    try:
+        for i, img in enumerate(images):
+            cv2.imshow("image_" + str(i), img)
+        while True:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+    except KeyboardInterrupt:
+        print("Received Ctrl+C, exiting.")
+    finally:
+        cv2.destroyAllWindows()
 
-img_path = "images/example_02.jpg"
+img_path = "images/000001.jpg"
 
 # Read image and preprocess
 image = cv2.imread(img_path)
@@ -31,6 +38,10 @@ edged = cv2.dilate(edged, None, iterations=1)
 edged = cv2.erode(edged, None, iterations=1)
 
 #show_images([blur, edged])
+# Apply Hough transform on the blurred image.
+detected_circles = cv2.HoughCircles(blurred,
+                   cv2.HOUGH_GRADIENT, 1, 20, param1 = 50,
+               param2 = 30, minRadius = 1, maxRadius = 40)
 
 # Find contours
 cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -41,6 +52,24 @@ cnts = imutils.grab_contours(cnts)
 
 # Remove contours which are not large enough
 cnts = [x for x in cnts if cv2.contourArea(x) > 100]
+
+# Check if circle
+def is_circle(contour, image, tolerance=0.1):
+    perimeter = cv2.arcLength(contour, True)
+    area = cv2.contourArea(contour)
+    if area == 0:
+        return False
+    circularity = 4 * math.pi * (area / (perimeter ** 2))
+    return circularity > (1 - tolerance) and circularity < (1 + tolerance)
+
+circle_contours = [cnt for cnt in cnts if is_circle(cnt, image)]
+
+if circle_contours:
+    leftmost_circle = circle_contours[0]
+    cv2.drawContours(image, [leftmost_circle], -1, (0, 255, 0), 2)  
+    show_images([image])  
+else:
+    print("No circles found in the image.")
 
 #cv2.drawContours(image, cnts, -1, (0,255,0), 3)
 
@@ -58,6 +87,12 @@ box = perspective.order_points(box)
 dist_in_pixel = euclidean(tl, tr)
 dist_in_cm = 2
 pixel_per_cm = dist_in_pixel/dist_in_cm
+
+detected_circles = np.uint16(np.around(detected_circles))
+tmp = deteced_circles[0]
+ref_object = tmp[2]
+
+
 
 # Draw remaining contours
 for cnt in cnts:
