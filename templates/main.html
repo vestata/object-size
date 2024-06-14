@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>估價系統</title>
 	<link rel="stylesheet" href="{{ url_for('static', filename='0608.css') }}">
 </head>
@@ -54,7 +55,7 @@
                 </form>
             </div>
             <div class="image-upload">
-                <h2>AI辨識物件</h2>
+                <h2>上傳圖片</h2>
                 <div class="upload-box">
                     <label for="upload1">上傳照片1</label>
                     <input type="file" id="upload1">
@@ -63,6 +64,17 @@
                     <label for="upload2">上傳照片2</label>
                     <input type="file" id="upload2">
                 </div>
+                <h2>拍攝</h2>
+                <label for="environment">拍攝:</label>
+                    <br>
+                    <input
+                    type="file"
+                    id="environment"
+                    name="environment" 
+                    capture="environment"
+                    accept="image/*"
+                    >
+                    <br><br>
             </div>
         </div>
     </div>
