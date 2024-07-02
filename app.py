@@ -1,12 +1,68 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 from werkzeug.utils import secure_filename
+import base64
+import cv2
+import numpy as np
+import math
+from scipy.spatial.distance import euclidean
+from imutils import perspective
+from imutils import contours
+import imutils
+import sys
+
 
 UPLOAD_FOLDER = './tmp'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
+    # 读取和处理图像
+    image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (9, 9), 0)
+    edged = cv2.Canny(blur, 50, 100)
+    edged = cv2.dilate(edged, None, iterations=1)
+    edged = cv2.erode(edged, None, iterations=1)
+
+    # 计算每厘米的像素数
+    pixel_per_cm = dist_in_pixel / dist_in_cm
+
+    # 找寻并排序轮廓
+    cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    (cnts, _) = contours.sort_contours(cnts)
+
+    cv2.putText(image, "Ref size: {:.2f}cm".format(dist_in_cm), (10, 30), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+
+    # 绘制其余轮廓并计算尺寸
+    for cnt in cnts:
+        box = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(box)
+        box = np.array(box, dtype="int")
+        box = perspective.order_points(box)
+        area = cv2.contourArea(box)
+        if area > dist_in_cm ** 2:
+            (tl, tr, br, bl) = box
+            cv2.drawContours(image, [box.astype("int")], -1, (0, 0, 255), 2)
+            mid_pt_horizontal = (tl[0] + int(abs(tr[0] - tl[0]) / 2), tl[1] + int(abs(tr[1] - tl[1]) / 2))
+            mid_pt_verticle = (tr[0] + int(abs(tr[0] - br[0]) / 2), tr[1] + int(abs(tr[1] - br[1]) / 2))
+            wid = euclidean(tl, tr) / pixel_per_cm
+            ht = euclidean(tr, br) / pixel_per_cm
+            cv2.putText(image, "{:.1f}cm".format(wid), (int(mid_pt_horizontal[0] - 15), int(mid_pt_horizontal[1] - 10)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            cv2.putText(image, "{:.1f}cm".format(ht), (int(mid_pt_verticle[0] + 10), int(mid_pt_verticle[1])),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
+    # 将处理后的图像转换为base64编码
+    _, buffer = cv2.imencode('.jpg', image)
+    encoded_image = base64.b64encode(buffer).decode('utf-8')
+    print("Encoded image size:", len(encoded_image))
+
+    return encoded_image
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -28,9 +84,18 @@ def upload_file():
         return 'File successfully uploaded'
     return 'Invalid file extension'
 
+
 @app.route('/')
 def home():
 	return render_template('camera.html')
+
+@app.route('/process', methods=['POST'])
+def process():
+    data_url = request.json.get('image')
+    image_data = base64.b64decode(data_url.split(',')[1])
+    processed_image = process_image(image_data)
+    print("Processed image generated")
+    return jsonify({'processed_image': processed_image})
 
 if __name__ == '__main__':
     context = ('cert.pem', 'key.pem')
