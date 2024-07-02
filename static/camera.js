@@ -24,6 +24,8 @@ async function captureAndProcessImage() {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataURL = canvas.toDataURL('image/png');
 
+    console.log("Captured image DataURL:", dataURL);  // 添加这一行来检查 DataURL
+
     // 發送圖像數據進行處理
     const response = await fetch('/process', {
         method: 'POST',
@@ -34,25 +36,14 @@ async function captureAndProcessImage() {
     });
 
     const result = await response.json();
-    console.log(result);
     const processed = document.getElementById('processed');
-    processed.src = 'data:image/png;base64,' + result.processed_image;
+    if (processed) {
+        processed.src = 'data:image/png;base64,' + result.processed_image;
+    } else {
+        console.error("Element with id 'processed' not found.");
+    }
 }
 
 document.getElementById('snap').addEventListener('click', captureAndProcessImage);
-
-function setScaleSize(size) {
-    const scale = document.getElementById('scale');
-    if (size === 'small') {
-        scale.style.width = '15px';
-        scale.style.height = '60px';
-    } else if (size === 'medium') {
-        scale.style.width = '25px';
-        scale.style.height = '100px';
-    } else if (size === 'large') {
-        scale.style.width = '35px';
-        scale.style.height = '140px';
-    }
-}
 
 window.onload = init;
