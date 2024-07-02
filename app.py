@@ -30,8 +30,9 @@ def upload_file():
 
 @app.route('/')
 def home():
-	return render_template('main.html')
+	return render_template('camera.html')
 
 if __name__ == '__main__':
-    app.run(host='140.116.179.17', debug=True)
+    context = ('cert.pem', 'key.pem')
+    app.run(host='140.116.179.17', debug=True, port=5000, ssl_context=context)
 
