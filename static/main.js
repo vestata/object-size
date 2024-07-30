@@ -66,10 +66,18 @@ document.getElementById('upload1').addEventListener('change', function(event) {
 });
 
 window.onload = function() {
+    clearLocalStorage();
+
     document.getElementById('ai-large').value = localStorage.getItem('ai-large') || '';
     document.getElementById('ai-medium').value = localStorage.getItem('ai-medium') || '';
     document.getElementById('ai-small').value = localStorage.getItem('ai-small') || '';
 };
+
+function clearLocalStorage() {
+    localStorage.removeItem('ai-large');
+    localStorage.removeItem('ai-medium');
+    localStorage.removeItem('ai-small');
+}
 
 // 清空表單的函數
 function clearForms() {
