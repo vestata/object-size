@@ -16,6 +16,13 @@ import sys
 
 app = Flask(__name__)
 
+def boxconfig():
+    return {
+        'small': {'width': 47, 'height': 33},
+        'medium': {'width': 48, 'height': 45},
+        'large': {'width': 69, 'height': 47}
+    }
+
 # app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
@@ -38,6 +45,8 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
     cv2.putText(image, "Ref size: {:.2f}cm".format(dist_in_cm), (10, 30), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
+    items = []
+
     # 绘制其余轮廓并计算尺寸
     for cnt in cnts:
         box = cv2.minAreaRect(cnt)
@@ -52,6 +61,8 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
             mid_pt_verticle = (tr[0] + int(abs(tr[0] - br[0]) / 2), tr[1] + int(abs(tr[1] - br[1]) / 2))
             wid = euclidean(tl, tr) / pixel_per_cm
             ht = euclidean(tr, br) / pixel_per_cm
+            items.append((wid, ht))
+            # print(f"with = {wid}, hieght = {ht}")
             cv2.putText(image, "{:.1f}cm".format(wid), (int(mid_pt_horizontal[0] - 15), int(mid_pt_horizontal[1] - 10)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             cv2.putText(image, "{:.1f}cm".format(ht), (int(mid_pt_verticle[0] + 10), int(mid_pt_verticle[1])),
@@ -62,7 +73,25 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
     encoded_image = base64.b64encode(buffer).decode('utf-8')
     print("Encoded image size:", len(encoded_image))
 
-    return encoded_image
+    return encoded_image, items
+
+def fit_boxes(items, box_config):
+    small = []
+    medium = []
+    large = []
+
+    for item in items:
+        width, height = item
+        if width <= box_config['small']['width'] and height <= box_config['small']['height']:
+            small.append(item)
+        elif width <= box_config['medium']['width'] and height <= box_config['medium']['height']:
+            medium.append(item)
+        elif width <= box_config['large']['width'] and height <= box_config['large']['height']:
+            large.append(item)
+        else:
+            print(f"Item {item} is too large for any box.")
+
+    return small, medium, large
 
 # def allowed_file(filename):
 #     return '.' in filename and \
@@ -87,19 +116,33 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
 
 @app.route('/')
 def home():
-	return render_template('camera.html')
+	return render_template('main.html')
+
+@app.route('/camera')
+def camera():
+    return render_template('camera.html')
 
 @app.route('/process', methods=['POST'])
 def process():
     data_url = request.json.get('image')
     image_data = base64.b64decode(data_url.split(',')[1])
-    processed_image = process_image(image_data)
+    processed_image, items = process_image(image_data)
     if processed_image is None:
         return jsonify({'error': 'Image processing failed'})
     print("Processed image generated")
-    return jsonify({'processed_image': processed_image})
+    
+    box_config = boxconfig()
+    small, medium, large = fit_boxes(items, box_config)
+
+    return jsonify({
+        'processed_image': processed_image,
+        'small': small,
+        'medium': medium,
+        'large': large
+    })
+
 
 if __name__ == '__main__':
     context = ('cert.pem', 'key.pem')
-    app.run(host='140.116.179.17', debug=True, port=8000, ssl_context=context)
+    app.run(host='140.116.179.17', debug=True, port=5000, ssl_context=context)
 

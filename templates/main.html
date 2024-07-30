@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>估價系統</title>
-	<link rel="stylesheet" href="{{ url_for('static', filename='main
-    .css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
 <body>
     <div class="container">
@@ -66,8 +65,8 @@
                     <input type="file" id="upload2">
                 </div>
                 <h2>拍攝</h2>
-                <label for="environment">拍攝:</label>
-                    <br>
+                <a href="{{ url_for('camera') }}" class="camera-button">拍攝</a>
+                    <!-- <br>
                     <input
                     type="file"
                     id="environment"
@@ -75,7 +74,7 @@
                     capture="environment"
                     accept="image/*"
                     >
-                    <br><br>
+                    <br><br> -->
             </div>
         </div>
     </div>
