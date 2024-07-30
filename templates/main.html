@@ -56,20 +56,59 @@
                 </form>
             </div>
             <div class="image-upload">
+                <h2>拍攝</h2>
+                <a href="{{ url_for('camera') }}" class="camera-button">拍攝</a>
                 <h2>上傳圖片</h2>
                 <div class="upload-box">
                     <label for="upload1">上傳照片1</label>
                     <input type="file" id="upload1">
                 </div>
-                <div class="upload-box">
+                <!-- <div class="upload-box">
                     <label for="upload2">上傳照片2</label>
                     <input type="file" id="upload2">
-                </div>
-                <h2>拍攝</h2>
-                <a href="{{ url_for('camera') }}" class="camera-button">拍攝</a>
+                </div> -->
             </div>
         </div>
     </div>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script>
+        document.getElementById('upload1').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageData = e.target.result.split(',')[1];
+                    fetch('{{ url_for("process") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ image: `data:image/jpeg;base64,${imageData}` })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('upload-status').innerText = '圖像處理失敗';
+                        } else {
+                            // 更新箱子數量
+                            document.getElementById('ai-large').value = data.large.length;
+                            document.getElementById('ai-medium').value = data.medium.length;
+                            document.getElementById('ai-small').value = data.small.length;
+                            // 儲存到本地儲存
+                            localStorage.setItem('ai-large', data.large.length);
+                            localStorage.setItem('ai-medium', data.medium.length);
+                            localStorage.setItem('ai-small', data.small.length);
+                            document.getElementById('upload-status').innerText = '上傳成功';
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        document.getElementById('upload-status').innerText = '上傳失敗';
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 </html>

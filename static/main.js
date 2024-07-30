@@ -29,6 +29,42 @@ function sendToLineBot(data) {
     });
 }
 
+document.getElementById('upload1').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageData = e.target.result.split(',')[1];
+            fetch('{{ url_for("process") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: `data:image/jpeg;base64,${imageData}` })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('圖像處理失敗');
+                } else {
+                    // 更新箱子數量
+                    document.getElementById('ai-large').value = data.large.length;
+                    document.getElementById('ai-medium').value = data.medium.length;
+                    document.getElementById('ai-small').value = data.small.length;
+                    // store the number of boxes needed in local
+                    localStorage.setItem('ai-large', data.large.length);
+                    localStorage.setItem('ai-medium', data.medium.length);
+                    localStorage.setItem('ai-small', data.small.length);
+
+                    // return to main.html
+                    window.location.href = '{{ url_for("home") }}';
+                }
+            })
+            .catch(console.error);
+        };
+    }
+});
+
 window.onload = function() {
     document.getElementById('ai-large').value = localStorage.getItem('ai-large') || '';
     document.getElementById('ai-medium').value = localStorage.getItem('ai-medium') || '';
