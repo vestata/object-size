@@ -9,6 +9,8 @@ document.getElementById('aiForm').addEventListener('submit', function(event) {
     // Add your form handling logic here
 });
 
+document.getElementById('clearButton').addEventListener('click', clearForms);
+
 // Example function to connect with LINE BOT API
 function sendToLineBot(data) {
     fetch('YOUR_LINE_BOT_API_ENDPOINT', {
@@ -32,6 +34,31 @@ window.onload = function() {
     document.getElementById('ai-medium').value = localStorage.getItem('ai-medium') || '';
     document.getElementById('ai-small').value = localStorage.getItem('ai-small') || '';
 };
+
+// 清空表單的函數
+function clearForms() {
+    // 清空容積計算估價表單
+    document.getElementById('length').value = '';
+    document.getElementById('width').value = '';
+    document.getElementById('height').value = '';
+    document.getElementById('large').value = '';
+    document.getElementById('medium').value = '';
+    document.getElementById('small').value = '';
+    document.getElementById('amount-estimate').value = '';
+
+    // 清空AI辨識估價表單
+    document.getElementById('ai-large').value = '';
+    document.getElementById('ai-medium').value = '';
+    document.getElementById('ai-small').value = '';
+    document.getElementById('hang-box').value = '';
+    document.getElementById('ai-amount-estimate').value = '';
+    document.getElementById('savings').value = '';
+
+    // 清除本地儲存
+    localStorage.removeItem('ai-large');
+    localStorage.removeItem('ai-medium');
+    localStorage.removeItem('ai-small');
+}
 
 function fit_boxes(length, width, height) {
     const box_config = {
