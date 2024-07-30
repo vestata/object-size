@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>估價系統</title>
-	<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
 <body>
     <div class="container">
@@ -20,19 +20,19 @@
         <div class="form-section">
             <div class="volume-estimate">
                 <h2>容積計算估價</h2>
-                <form id="volumeForm">
+                <form id="volumeForm" onsubmit="return false;">
                     <label for="length">輸入長：</label>
-                    <input type="text" id="length">
+                    <input type="text" id="length" oninput="calculateVolume()">
                     <label for="width">輸入寬：</label>
-                    <input type="text" id="width">
+                    <input type="text" id="width" oninput="calculateVolume()">
                     <label for="height">輸入高：</label>
-                    <input type="text" id="height">
+                    <input type="text" id="height" oninput="calculateVolume()">
                     <label for="large">預估箱數：大</label>
-                    <input type="text" id="large">
+                    <input type="text" id="large" readonly>
                     <label for="medium">中</label>
-                    <input type="text" id="medium">
+                    <input type="text" id="medium" readonly>
                     <label for="small">小</label>
-                    <input type="text" id="small">
+                    <input type="text" id="small" readonly>
                     <label for="amount-estimate">金額預估：</label>
                     <input type="text" id="amount-estimate">
                 </form>
@@ -66,18 +66,9 @@
                 </div>
                 <h2>拍攝</h2>
                 <a href="{{ url_for('camera') }}" class="camera-button">拍攝</a>
-                    <!-- <br>
-                    <input
-                    type="file"
-                    id="environment"
-                    name="environment" 
-                    capture="environment"
-                    accept="image/*"
-                    >
-                    <br><br> -->
             </div>
         </div>
     </div>
-	<script src="{{ url_for('static', filename='main.js') }}"></script>
-    </body>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
 </html>
