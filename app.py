@@ -138,7 +138,8 @@ def process():
         'processed_image': processed_image,
         'small': small,
         'medium': medium,
-        'large': large
+        'large': large,
+        'redirect_url': url_for('home', preserve='true')
     })
 
 

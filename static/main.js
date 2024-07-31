@@ -66,7 +66,11 @@ document.getElementById('upload1').addEventListener('change', function(event) {
 });
 
 window.onload = function() {
-    clearLocalStorage();
+    if (!shouldPreserveStorage()) {
+        clearLocalStorage();
+    } else {
+        removePreserveParameter();
+    }
 
     document.getElementById('ai-large').value = localStorage.getItem('ai-large') || '';
     document.getElementById('ai-medium').value = localStorage.getItem('ai-medium') || '';
@@ -77,6 +81,19 @@ function clearLocalStorage() {
     localStorage.removeItem('ai-large');
     localStorage.removeItem('ai-medium');
     localStorage.removeItem('ai-small');
+}
+
+function shouldPreserveStorage() {
+    const params = new URLSearchParams(window.location.search);
+    const preserve = params.has('preserve');
+    console.log('Preserve parameter exists:', preserve);
+    return params.has('preserve');
+}
+
+function removePreserveParameter() {
+    const url = new URL(window.location);
+    url.searchParams.delete('preserve');
+    window.history.replaceState({}, document.title, url.toString());
 }
 
 // 清空表單的函數

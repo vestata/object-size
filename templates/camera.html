@@ -53,7 +53,7 @@
                     localStorage.setItem('ai-small', data.small.length);
                     
                     // return to main.html
-                    window.location.href = '{{ url_for("home") }}';
+                    window.location.href = '{{ url_for("home", preserve="true") }}';
                 }
             })
             .catch(console.error);
