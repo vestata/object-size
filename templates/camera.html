@@ -21,9 +21,16 @@
         const snap = document.getElementById('snap');
         const processed = document.getElementById('processed');
 
-        navigator.mediaDevices.getUserMedia({ video: true })
+        const constraints = {
+            video: {
+                facingMode: 'environment' // 使用後置相機
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => {
                 video.srcObject = stream;
+                facingMode = 'enviroment'
             })
             .catch(console.error);
 
