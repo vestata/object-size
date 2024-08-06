@@ -61,8 +61,8 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
             mid_pt_verticle = (tr[0] + int(abs(tr[0] - br[0]) / 2), tr[1] + int(abs(tr[1] - br[1]) / 2))
             wid = euclidean(tl, tr) / pixel_per_cm
             ht = euclidean(tr, br) / pixel_per_cm
-            # 這邊預設物品深度是 30 公分。
-            items.append(wid * ht * 25)
+            # 這邊預設物品深度是 15 公分。
+            items.append(wid * ht * 15)
             # print(f"with = {wid}, hieght = {ht}")
             cv2.putText(image, "{:.1f}cm".format(wid), (int(mid_pt_horizontal[0] - 15), int(mid_pt_horizontal[1] - 10)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
@@ -140,8 +140,21 @@ def camera():
 @app.route('/process', methods=['POST'])
 def process():
     data_url = request.json.get('image')
+    scale = request.json.get('scale', 'normal')
+
+    if scale == 'far':
+        dist_in_cm = 30.0
+        dist_in_pixel = 50 # 假設這是遠景對應的像素值
+    elif scale == 'close':
+        dist_in_cm = 30.0
+        dist_in_pixel = 200  # 假設這是近景對應的像素值
+    else:
+        dist_in_cm = 30.0
+        dist_in_pixel = 100.0  # 默認值
+
     image_data = base64.b64decode(data_url.split(',')[1])
-    processed_image, items = process_image(image_data)
+    processed_image, items = process_image(image_data, dist_in_cm, dist_in_pixel)
+
     if processed_image is None:
         return jsonify({'error': 'Image processing failed'})
     print("Processed image generated")
@@ -160,5 +173,5 @@ def process():
 
 if __name__ == '__main__':
     context = ('cert.pem', 'key.pem')
-    app.run(host='140.116.179.17', debug=True, port=5000, ssl_context=context)
+    app.run(host='0.0.0.0', debug=True, port=8089, ssl_context=context)
 
