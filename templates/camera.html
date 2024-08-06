@@ -55,9 +55,9 @@
                 } else {
                     processed.src = 'data:image/jpeg;base64,' + data.processed_image;
                     // store the number of boxes needed in local
-                    localStorage.setItem('ai-large', data.large.length);
-                    localStorage.setItem('ai-medium', data.medium.length);
-                    localStorage.setItem('ai-small', data.small.length);
+                    localStorage.setItem('ai-large', data.large);
+                    localStorage.setItem('ai-medium', data.medium);
+                    localStorage.setItem('ai-small', data.small);
                     
                     // return to main.html
                     window.location.href = '{{ url_for("home", preserve="true") }}';

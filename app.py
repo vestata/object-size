@@ -61,7 +61,8 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
             mid_pt_verticle = (tr[0] + int(abs(tr[0] - br[0]) / 2), tr[1] + int(abs(tr[1] - br[1]) / 2))
             wid = euclidean(tl, tr) / pixel_per_cm
             ht = euclidean(tr, br) / pixel_per_cm
-            items.append((wid, ht))
+            # 這邊預設物品深度是 30 公分。
+            items.append(wid * ht * 25)
             # print(f"with = {wid}, hieght = {ht}")
             cv2.putText(image, "{:.1f}cm".format(wid), (int(mid_pt_horizontal[0] - 15), int(mid_pt_horizontal[1] - 10)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
@@ -75,23 +76,37 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
 
     return encoded_image, items
 
-def fit_boxes(items, box_config):
-    small = []
-    medium = []
-    large = []
+def fit_boxes(items):
+    large = 69 * 47 * 47  
+    medium = 48 * 45 * 42  
+    small = 47 * 33 * 30  
 
-    for item in items:
-        width, height = item
-        if width <= box_config['small']['width'] and height <= box_config['small']['height']:
-            small.append(item)
-        elif width <= box_config['medium']['width'] and height <= box_config['medium']['height']:
-            medium.append(item)
-        elif width <= box_config['large']['width'] and height <= box_config['large']['height']:
-            large.append(item)
-        else:
-            print(f"Item {item} is too large for any box.")
+    r_small = 0
+    r_medium = 0
+    r_large = 0
+	
+    for tmp in items:
+        print(tmp)
+        while tmp >= large:
+            tmp -= large
+            r_large += 1
 
-    return small, medium, large
+        print(tmp)
+        while large > tmp >= medium:
+            tmp -= medium
+            r_medium += 1
+
+        print(tmp)
+        while medium > tmp >= small:
+            tmp -= small
+            r_small += 1
+
+    if tmp > 0:
+        r_small += 1
+
+    print(r_small, r_medium, r_large)
+
+    return r_small, r_medium, r_large
 
 # def allowed_file(filename):
 #     return '.' in filename and \
@@ -130,9 +145,9 @@ def process():
     if processed_image is None:
         return jsonify({'error': 'Image processing failed'})
     print("Processed image generated")
-    
-    box_config = boxconfig()
-    small, medium, large = fit_boxes(items, box_config)
+   
+    print(items)
+    small, medium, large = fit_boxes(items)
 
     return jsonify({
         'processed_image': processed_image,

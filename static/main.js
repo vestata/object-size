@@ -48,13 +48,13 @@ document.getElementById('upload1').addEventListener('change', function(event) {
                     alert('圖像處理失敗');
                 } else {
                     // 更新箱子數量
-                    document.getElementById('ai-large').value = data.large.length;
-                    document.getElementById('ai-medium').value = data.medium.length;
-                    document.getElementById('ai-small').value = data.small.length;
+                    document.getElementById('ai-large').value = data.large;
+                    document.getElementById('ai-medium').value = data.medium;
+                    document.getElementById('ai-small').value = data.small;
                     // store the number of boxes needed in local
-                    localStorage.setItem('ai-large', data.large.length);
-                    localStorage.setItem('ai-medium', data.medium.length);
-                    localStorage.setItem('ai-small', data.small.length);
+                    localStorage.setItem('ai-large', data.large);
+                    localStorage.setItem('ai-medium', data.medium);
+                    localStorage.setItem('ai-small', data.small);
 
                     // return to main.html
                     window.location.href = '{{ url_for("home") }}';
