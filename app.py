@@ -76,6 +76,18 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
 
     return encoded_image, items
 
+def fit_car(box_list):
+    large = 69 * 47 * 47  
+    medium = 48 * 45 * 42  
+    small = 47 * 33 * 30 
+
+    ret = large * box_list[2] + medium * box_list[1] + small * box_list[0]
+    ret /= 1000000
+
+    # 將 ret 設定為 0.5 的 ceiling
+    ret = math.ceil(ret * 2) / 2
+    return ret
+
 def fit_boxes(items):
     large = 69 * 47 * 47  
     medium = 48 * 45 * 42  
@@ -159,14 +171,15 @@ def process():
         return jsonify({'error': 'Image processing failed'})
     print("Processed image generated")
    
-    print(items)
     small, medium, large = fit_boxes(items)
+    car = fit_car([small, medium, large])
 
     return jsonify({
         'processed_image': processed_image,
         'small': small,
         'medium': medium,
         'large': large,
+        'car': car,
         'redirect_url': url_for('home', preserve='true')
     })
 

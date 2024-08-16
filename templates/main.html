@@ -33,8 +33,8 @@
                     <input type="text" id="medium" readonly>
                     <label for="small">小</label>
                     <input type="text" id="small" readonly>
-                    <label for="amount-estimate">金額預估：</label>
-                    <input type="text" id="amount-estimate">
+                    <label for="car-estimate">車：</label>
+                    <input type="text" id="car-estimate">
                 </form>
             </div>
             <div class="ai-estimate">
@@ -50,8 +50,8 @@
                     <input type="text" id="hang-box">
                     <label for="ai-amount-estimate">金額預估：</label>
                     <input type="text" id="ai-amount-estimate">
-                    <label for="savings">節省金額：</label>
-                    <input type="text" id="savings">
+                    <label for="ai-car-estimate">車：</label>
+                    <input type="text" id="ai-car-estimate">
                     <button id="clearButton">清空</button>
                 </form>
             </div>
@@ -94,10 +94,12 @@
                             document.getElementById('ai-large').value = data.large;
                             document.getElementById('ai-medium').value = data.medium;
                             document.getElementById('ai-small').value = data.small;
+                            document.getElementById('ai-car-estimate').value = data.car;
                             // 儲存到本地儲存
                             localStorage.setItem('ai-large', data.large);
                             localStorage.setItem('ai-medium', data.medium);
                             localStorage.setItem('ai-small', data.small);
+                            localStorage.setItem('ai-car-estimate', data.car);
                             document.getElementById('upload-status').innerText = '上傳成功';
                         }
                     })

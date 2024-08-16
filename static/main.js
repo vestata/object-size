@@ -49,12 +49,14 @@ document.getElementById('upload1').addEventListener('change', function(event) {
                 } else {
                     // 更新箱子數量
                     document.getElementById('ai-large').value = data.large;
-                    document.getElementById('ai-medium').value = data.medium;
+                    document.getElementById('ai-medium').value = data.car;
                     document.getElementById('ai-small').value = data.small;
+                    document.getElementById('ai-car-estimate').value = data.car;
                     // store the number of boxes needed in local
                     localStorage.setItem('ai-large', data.large);
                     localStorage.setItem('ai-medium', data.medium);
                     localStorage.setItem('ai-small', data.small);
+                    localStorage.setItem('ai-car-estimate', data.car);
 
                     // return to main.html
                     window.location.href = '{{ url_for("home") }}';
@@ -75,12 +77,14 @@ window.onload = function() {
     document.getElementById('ai-large').value = localStorage.getItem('ai-large') || '';
     document.getElementById('ai-medium').value = localStorage.getItem('ai-medium') || '';
     document.getElementById('ai-small').value = localStorage.getItem('ai-small') || '';
+    document.getElementById('ai-car-estimate').value = localStorage.getItem('ai-car-estimate') || '';
 };
 
 function clearLocalStorage() {
     localStorage.removeItem('ai-large');
     localStorage.removeItem('ai-medium');
     localStorage.removeItem('ai-small');
+    localStorage.removeItem('ai-car-estimate');
 }
 
 function shouldPreserveStorage() {
@@ -105,7 +109,7 @@ function clearForms() {
     document.getElementById('large').value = '';
     document.getElementById('medium').value = '';
     document.getElementById('small').value = '';
-    document.getElementById('amount-estimate').value = '';
+    document.getElementById('car-estimate').value = '';
 
     // 清空AI辨識估價表單
     document.getElementById('ai-large').value = '';
@@ -113,12 +117,14 @@ function clearForms() {
     document.getElementById('ai-small').value = '';
     document.getElementById('hang-box').value = '';
     document.getElementById('ai-amount-estimate').value = '';
-    document.getElementById('savings').value = '';
+    document.getElementById('ai-car-estimate').value = '';
+    // document.getElementById('savings').value = '';
 
     // 清除本地儲存
     localStorage.removeItem('ai-large');
     localStorage.removeItem('ai-medium');
     localStorage.removeItem('ai-small');
+    localStorage.removeItem('ai-car-estimate');
 }
 
 function fit_boxes(length, width, height) {
