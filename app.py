@@ -25,13 +25,13 @@ def boxconfig():
 
 # app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
+def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0, blur_kernel=(9, 9), canny_thresholds=(50, 100), dilate_iterations=1, depth=15):
     # 读取和处理图像
     image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (9, 9), 0)
-    edged = cv2.Canny(blur, 50, 100)
-    edged = cv2.dilate(edged, None, iterations=1)
+    blur = cv2.GaussianBlur(gray, blur_kernel, 0)
+    edged = cv2.Canny(blur, canny_thresholds[0], canny_thresholds[1])
+    edged = cv2.dilate(edged, None, iterations=dilate_iterations)
     edged = cv2.erode(edged, None, iterations=1)
 
     # 计算每厘米的像素数
@@ -45,7 +45,8 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
     cv2.putText(image, "Ref size: {:.2f}cm".format(dist_in_cm), (10, 30), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
-    items = []
+    # items = []
+    items = 0
 
     # 绘制其余轮廓并计算尺寸
     for cnt in cnts:
@@ -61,8 +62,8 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0):
             mid_pt_verticle = (tr[0] + int(abs(tr[0] - br[0]) / 2), tr[1] + int(abs(tr[1] - br[1]) / 2))
             wid = euclidean(tl, tr) / pixel_per_cm
             ht = euclidean(tr, br) / pixel_per_cm
-            # 這邊預設物品深度是 15 公分。
-            items.append(wid * ht * 15)
+            # items.append(wid * ht * depth)
+            items += (wid * ht * depth)
             # print(f"with = {wid}, hieght = {ht}")
             cv2.putText(image, "{:.1f}cm".format(wid), (int(mid_pt_horizontal[0] - 15), int(mid_pt_horizontal[1] - 10)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
@@ -89,31 +90,42 @@ def fit_car(box_list):
     return ret
 
 def fit_boxes(items):
-    large = 69 * 47 * 47  
-    medium = 48 * 45 * 42  
-    small = 47 * 33 * 30  
+    large = 69 * 47 * 47 / 1.2
+    medium = 48 * 45 * 42 / 1.1
+    small = 47 * 33 * 30 / 1.05
 
     r_small = 0
     r_medium = 0
     r_large = 0
 	
-    for tmp in items:
-        print(tmp)
-        while tmp >= large:
-            tmp -= large
-            r_large += 1
+    # for tmp in items:
+    #     print(tmp)
+    #     while tmp >= large:
+    #         tmp -= large
+    #         r_large += 1
 
-        print(tmp)
-        while large > tmp >= medium:
-            tmp -= medium
-            r_medium += 1
+    #     print(tmp)
+    #     while large > tmp >= medium:
+    #         tmp -= medium
+    #         r_medium += 1
 
-        print(tmp)
-        while medium > tmp >= small:
-            tmp -= small
-            r_small += 1
+    #     print(tmp)
+    #     while medium > tmp >= small:
+    #         tmp -= small
+    #         r_small += 1
 
-    if tmp > 0:
+    # if tmp > 0:
+    #     r_small += 1
+    while items >= large:
+        items -= large
+        r_large += 1
+
+    while large > items >= medium:
+        items -= medium
+        r_medium += 1
+
+    while medium > items >= small:
+        items -= small
         r_small += 1
 
     print(r_small, r_medium, r_large)
@@ -157,21 +169,74 @@ def process():
     if scale == 'far':
         dist_in_cm = 30.0
         dist_in_pixel = 50 # 假設這是遠景對應的像素值
+        blur_kernel = (9, 9)
+        canny_thresholds = (125, 250)
+        dilate_iterations = 1
+        depth = 20
+        result_processing_func = math.floor
     elif scale == 'close':
         dist_in_cm = 30.0
         dist_in_pixel = 200  # 假設這是近景對應的像素值
+        blur_kernel = (9, 9)
+        canny_thresholds = (100, 150)
+        dilate_iterations = 2
+        depth = 10
+        result_processing_func = math.ceil
     else:
         dist_in_cm = 30.0
         dist_in_pixel = 100.0  # 默認值
+        blur_kernel = (9, 9)
+        canny_thresholds = (110, 220)
+        dilate_iterations = 2
+        depth = 12
+        result_processing_func = round
 
     image_data = base64.b64decode(data_url.split(',')[1])
-    processed_image, items = process_image(image_data, dist_in_cm, dist_in_pixel)
+
+    original_image, original_items = process_image(image_data, dist_in_cm, dist_in_pixel, blur_kernel, canny_thresholds, dilate_iterations, depth)
+    print(f"原始圖像物品體積: {original_items}")
+
+    xx = 3
+    shifts = [(xx, 0), (-xx, 0), (0, xx), (0, -xx), (0, 0), (xx - 1, 0), (-xx + 1, 0), (0, xx - 1), (0, -xx + 1), (xx - 2, 0), (-xx + 2, 0), (0, xx - 2), (0, -xx + 2)]  # 右移、左移、下移、上移、無位移
+    result = [0,0,0]
+
+    for dx, dy in shifts:
+        # 讀取圖像並應用位移
+        image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+        height, width = image.shape[:2]
+
+        # 平移矩陣
+        translation_matrix = np.float32([[1, 0, dx], [0, 1, dy]])
+        shifted_image = cv2.warpAffine(image, translation_matrix, (width, height))
+
+        # 編碼位移後的圖像數據
+        _, buffer = cv2.imencode('.jpg', shifted_image)
+        shifted_image_data = buffer.tobytes()
+
+        # 處理位移後的圖像
+        processed_image, items = process_image(shifted_image_data, dist_in_cm, dist_in_pixel, blur_kernel, canny_thresholds, dilate_iterations, depth)
+        r_small, r_medium, r_large = fit_boxes(items)
+        print(f"位移 ({dx}, {dy}) 圖像物品體積: {items}, 大箱: {r_large}, 中箱: {r_medium}, 小箱: {r_small}")
+
+        # 累加到結果
+        result[0] += r_small
+        result[1] += r_medium
+        result[2] += r_large
+
+    print(result)
+    result = [result_processing_func(x / len(shifts)) for x in result]
+    print(f"!!!!!!!!result : {result}!!!!!!!!!!!!")
+
+
+
 
     if processed_image is None:
         return jsonify({'error': 'Image processing failed'})
     print("Processed image generated")
    
-    small, medium, large = fit_boxes(items)
+    small = result[0]
+    medium = result[1]
+    large = result[2]
     car = fit_car([small, medium, large])
 
     return jsonify({
@@ -186,5 +251,5 @@ def process():
 
 if __name__ == '__main__':
     context = ('cert.pem', 'key.pem')
-    app.run(host='0.0.0.0', debug=True, port=8089, ssl_context=context)
+    app.run(host='0.0.0.0', debug=True, port=5000, ssl_context=context)
 
