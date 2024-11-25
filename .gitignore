@@ -1,2 +1,4 @@
 *.jpg
 *.pem
+*.pt
+results/
