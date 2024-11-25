@@ -73,7 +73,7 @@ def process_image(image_data, dist_in_cm=30.0, dist_in_pixel=100.0, blur_kernel=
     # 将处理后的图像转换为base64编码
     _, buffer = cv2.imencode('.jpg', image)
     encoded_image = base64.b64encode(buffer).decode('utf-8')
-    print("Encoded image size:", len(encoded_image))
+    # print("Encoded image size:", len(encoded_image))
 
     return encoded_image, items
 
@@ -128,7 +128,7 @@ def fit_boxes(items):
         items -= small
         r_small += 1
 
-    print(r_small, r_medium, r_large)
+    # print(r_small, r_medium, r_large)
 
     return r_small, r_medium, r_large
 
@@ -173,7 +173,7 @@ def process():
         canny_thresholds = (125, 250)
         dilate_iterations = 1
         depth = 20
-        result_processing_func = math.floor
+        result_processing_func = math.ceil
     elif scale == 'close':
         dist_in_cm = 30.0
         dist_in_pixel = 200  # 假設這是近景對應的像素值
@@ -189,12 +189,12 @@ def process():
         canny_thresholds = (110, 220)
         dilate_iterations = 2
         depth = 12
-        result_processing_func = round
+        result_processing_func = math.ceil
 
     image_data = base64.b64decode(data_url.split(',')[1])
 
     original_image, original_items = process_image(image_data, dist_in_cm, dist_in_pixel, blur_kernel, canny_thresholds, dilate_iterations, depth)
-    print(f"原始圖像物品體積: {original_items}")
+    # print(f"原始圖像物品體積: {original_items}")
 
     xx = 3
     shifts = [(xx, 0), (-xx, 0), (0, xx), (0, -xx), (0, 0), (xx - 1, 0), (-xx + 1, 0), (0, xx - 1), (0, -xx + 1), (xx - 2, 0), (-xx + 2, 0), (0, xx - 2), (0, -xx + 2)]  # 右移、左移、下移、上移、無位移
@@ -216,16 +216,40 @@ def process():
         # 處理位移後的圖像
         processed_image, items = process_image(shifted_image_data, dist_in_cm, dist_in_pixel, blur_kernel, canny_thresholds, dilate_iterations, depth)
         r_small, r_medium, r_large = fit_boxes(items)
-        print(f"位移 ({dx}, {dy}) 圖像物品體積: {items}, 大箱: {r_large}, 中箱: {r_medium}, 小箱: {r_small}")
+        # print(f"位移 ({dx}, {dy}) 圖像物品體積: {items}, 大箱: {r_large}, 中箱: {r_medium}, 小箱: {r_small}")
+
+        # 累加到結果
+        result[0] += r_small
+        result[1] += r_medium
+        result[2] += r_large
+    
+    # 平移完成後，處理小角度旋轉
+    small_rotations = [-3, 3]  # 順時針和逆時針 5 度
+    for angle in small_rotations:
+        # 讀取原始圖像並應用旋轉
+        image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+        center = (width // 2, height // 2)
+        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (width, height))
+
+        # 編碼旋轉後的圖像數據
+        _, buffer = cv2.imencode('.jpg', rotated_image)
+        rotated_image_data = buffer.tobytes()
+
+        # 處理旋轉後的圖像
+        processed_image, items = process_image(rotated_image_data, dist_in_cm, dist_in_pixel, blur_kernel, canny_thresholds, dilate_iterations, depth)
+        r_small, r_medium, r_large = fit_boxes(items)
+        # print(f"旋轉 {angle}° 圖像物品體積: {items}, 大箱: {r_large}, 中箱: {r_medium}, 小箱: {r_small}")
 
         # 累加到結果
         result[0] += r_small
         result[1] += r_medium
         result[2] += r_large
 
-    print(result)
-    result = [result_processing_func(x / len(shifts)) for x in result]
-    print(f"!!!!!!!!result : {result}!!!!!!!!!!!!")
+    # print(result)
+    # print(len(shifts) + len(small_rotations))
+    result = [result_processing_func(x / (len(shifts) + len(small_rotations))) for x in result]
+    # print(f"!!!!!!!!result : {result}!!!!!!!!!!!!")
 
 
 
